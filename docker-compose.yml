@@ -1,0 +1,47 @@
+version: '3'
+services:
+    djangoweb:
+        container_name: django-webtest 
+        image: michaelyang0040/pgi:DjangoRed_djangoweb
+        restart: always 
+        expose: 
+        - "8000"
+        volumes:
+        - ./FileCabinets:/FileCabinets
+        - ./Config:/Config  
+        command: bash -c "gunicorn -w 8 --timeout 600 --bind 0.0.0.0:8000 server.wsgi"
+        environment:
+        - TZ=Asia/Taipei 
+        networks:
+        - nginx_network
+    nginx:
+        container_name: nginx-webtest    
+        image: michaelyang0040/pgi:DjangoRed_nginx
+        restart: always 
+        ports: 
+        - "80:80" 
+        volumes:
+        - ./FileCabinets:/FileCabinets
+        depends_on:
+        - djangoweb
+        environment:
+        - TZ=Asia/Taipei 
+        networks:
+        - nginx_network
+    monitor:
+        container_name: Mqtt_Monitor_Service
+        image: michaelyang0040/pgi:Supervisor_Mqtt_Monitor_Service
+        ports: 
+        - "8080:9001"
+        restart: always 
+        command: bash -c "python3 Monitor.py"
+        volumes:      
+        - ./Config:/Config
+        - ./FileCabinets:/FileCabinets        
+        environment:
+        - TZ=Asia/Taipei
+        networks:
+        - nginx_network
+networks:
+    nginx_network:
+        driver: bridge
